@@ -1,6 +1,6 @@
 # ProcessFileRenamer
 
-ProcessFileRenamer is a small ProcessWire admin Process module for safely renaming uploaded asset basenames. Here, an asset is a ProcessWire `Pagefile` or `Pageimage`.
+A small admin utility for safely renaming the basenames of uploaded assets. An asset is a ProcessWire `Pagefile` or `Pageimage`.
 
 Current module version: **1.3.0**.
 
@@ -9,26 +9,12 @@ It is designed for one-asset-at-a-time maintenance, not bulk renaming.
 ## What it does
 
 - Adds **Setup > File Renamer** in the ProcessWire admin.
-- Defines explicit `___install()` and `___uninstall()` methods.
-- Loads module CSS and JavaScript from separate module assets rather than inline markup.
-- Calls the parent Process install/uninstall methods so ProcessWire keeps control of the admin Process page lifecycle.
-- Requires the `file-renamer` permission, created explicitly during install when needed.
-- Lists only editable uploaded asset fields that contain assets for the selected page ID.
-- Runs the bounded reference scan on demand, keeping initial page loads fast and failing closed when the result would be incomplete.
-- Renames via `Pagefile::rename()` instead of direct filesystem moves.
-- Saves the owning field after rename.
-- Retains the existing extension as part of the new filename; ProcessWire applies its normal filename normalization.
-- Checks for filename collisions in the same asset field.
-- Scans text and textarea fields for exact hardcoded original file URLs, existing image variation URLs, and associated extra-file URLs when the current ProcessWire version exposes them through `Pagefile::getFiles()`.
-- Uses ProcessWire’s selector pipe operator (`|`) to combine URL candidates per field, then verifies exact matches in memory.
-- Can update exact hardcoded URL references only in fields the current role may edit.
-- Scans `/site/templates/` for exact hardcoded original file URL, existing image variation URL, and associated extra-file URL references and reports them for manual review.
-- Uses theme-aware AdminThemeUikit/UIkit cards, alerts, focus states, accessible radio groups, and live scan status.
-- Replaces unclear checkboxes with explicit radio choices for text URL handling, image variation handling, and template-file warning handling.
-- Keeps existing image variations by default.
-- Requires page view and field edit access before a scan or rename is allowed. References outside the role’s update scope block the rename without revealing their details.
-- Optionally removes image variations only after a successful rename and text-reference update; variation deletion is blocked when hardcoded variation URLs are found.
-- Logs each rename to **Setup > Logs > file-renamer**.
+- Renames one asset at a time through ProcessWire’s file APIs, retaining its extension and preventing filename collisions.
+- Requires the `file-renamer` permission plus page and field access.
+- Scans supported text fields and template files for hardcoded asset URLs before renaming.
+- Can update writable text-field URLs and warns about template-file references for manual review.
+- Keeps the scan on demand and blocks the rename when its safety coverage is incomplete.
+- Logs completed and partial operations to **Setup > Logs > file-renamer**.
 
 ## Why this approach
 
