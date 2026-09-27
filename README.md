@@ -16,6 +16,28 @@ It is designed for one-asset-at-a-time maintenance, not bulk renaming.
 - Keeps the scan on demand and blocks the rename when its safety coverage is incomplete.
 - Logs completed and partial operations to **Setup > Logs > file-renamer**.
 
+## Screenshots
+
+### 1. Find the owner page
+
+![File Renamer start screen](screenshots/01.png)
+
+### 2. Confirm the page ID
+
+![File Renamer page confirmation](screenshots/02.png)
+
+### 3. Choose an asset
+
+![File Renamer asset selection](screenshots/03.png)
+
+### 4. Review the reference scan and rename options
+
+![File Renamer completed reference scan](screenshots/04.png)
+
+### 5. View the renamed asset
+
+![File Renamer renamed asset](screenshots/05.png)
+
 ## Why this approach
 
 ProcessWire asset fields should be renamed through the Pagefile/Pageimage API. `Pagefile::rename()` expects only an asset basename, no path, and ProcessWire's own API reference says to follow the rename with `$page->save()` for the owning page.
