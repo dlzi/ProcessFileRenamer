@@ -2,7 +2,7 @@
 
 A small admin utility for safely renaming the basenames of uploaded assets. An asset is a ProcessWire `Pagefile` or `Pageimage`.
 
-Current module version: **1.3.0**.
+Current module version: **1.3.1**.
 
 It is designed for one-asset-at-a-time maintenance, not bulk renaming.
 
@@ -14,6 +14,7 @@ It is designed for one-asset-at-a-time maintenance, not bulk renaming.
 - Scans supported text fields and template files for hardcoded asset URLs before renaming.
 - Can update writable text-field URLs and warns about template-file references for manual review.
 - Keeps the scan on demand and blocks the rename when its safety coverage is incomplete.
+- Reloads the owning page directly from the database and verifies the new basename and source file before reporting success.
 - Logs completed and partial operations to **Setup > Logs > file-renamer**.
 
 ## Screenshots
@@ -97,6 +98,8 @@ The module blocks the rename when template-file references are found unless **I 
 The submit workflow repeats the permission, scan-completeness, collision, and reference checks on the server. Client-side controls are a usability aid, not a security boundary.
 
 API-rendered usages such as `$image->url`, `$file->url`, `$page->images`, and `$page->files` should continue to work because the file object is renamed and the owning page field is saved.
+
+The asset rename and its ProcessWire field update are one logical change. If asset directories are synchronized or deployed without the corresponding database, the target environment must apply a migration that reconciles the stored basename. File Renamer verifies the active environment, but it cannot update databases on other machines automatically.
 
 The scan covers supported text fields and PHP, INC, HTML, HTM, Twig, Latte, and TPL files up to 2 MB. It does not cover every storage location, for example:
 

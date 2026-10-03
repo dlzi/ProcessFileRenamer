@@ -3,7 +3,7 @@
 $info = array(
 	'title' => 'File Renamer',
 	'summary' => 'Safely rename ProcessWire uploaded asset basenames from the admin.',
-	'version' => 130,
+	'version' => 131,
 	'author' => 'Daniel Zilli',
 	'icon' => 'file-image-o',
 	'singular' => true,

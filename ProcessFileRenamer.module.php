@@ -651,6 +651,7 @@ class ProcessFileRenamer extends Process {
 
 			$renamed = false;
 			$ownerSaved = false;
+			$persistenceVerified = false;
 			$updatedRefs = array();
 			$removedVariations = array();
 
@@ -666,6 +667,8 @@ class ProcessFileRenamer extends Process {
 					throw new WireException('The asset was renamed, but its owning field could not be saved.');
 				}
 				$ownerSaved = true;
+				$this->assertPersistedAsset($page->id, $fieldName, $newBasename, $oldBasename);
+				$persistenceVerified = true;
 
 				if($updateTextRefs && count($referenceReport['text'])) {
 					$this->updateTextReferences($referenceReport['text'], $replacementMap, $updatedRefs);
@@ -676,16 +679,28 @@ class ProcessFileRenamer extends Process {
 					$removedVariations = $file->removeVariations(array('getFiles' => true));
 					if(!is_array($removedVariations)) $removedVariations = array();
 				}
+
+				// Verify again after all optional work so a completed log entry always
+				// represents both a persisted field value and an existing source file.
+				$this->assertPersistedAsset($page->id, $fieldName, $newBasename, $oldBasename);
 			} catch(\Throwable $e) {
-				if($renamed && !$ownerSaved) {
+				if($renamed && !$persistenceVerified) {
 					$rolledBack = false;
 					try {
-						$rolledBack = (bool) $file->rename($oldBasename) && (bool) $page->save($fieldName);
+						$rollbackResult = $file->basename === $oldBasename
+							? $oldBasename
+							: $file->rename($oldBasename);
+						$rolledBack = $rollbackResult === $oldBasename
+							&& (bool) $page->save($fieldName);
+						if($rolledBack) {
+							$this->assertPersistedAsset($page->id, $fieldName, $oldBasename, $newBasename);
+						}
 					} catch(\Throwable $rollbackError) {
 						$log->save(self::LOG_NAME, 'status=rollback_failed page=' . (int) $page->id . ' field=' . $fieldName . ' old=' . $oldBasename . ' new=' . $newBasename . ' error=' . $rollbackError->getMessage());
 					}
 					if($rolledBack) {
-						throw new WireException('The rename could not be saved and was rolled back. No asset changes were kept.');
+						$log->save(self::LOG_NAME, 'status=rolled_back page=' . (int) $page->id . ' field=' . $fieldName . ' old=' . $oldBasename . ' new=' . $newBasename . ' error=' . $e->getMessage());
+						throw new WireException('The rename could not be verified in the database and was rolled back. No asset changes were kept.');
 					}
 				}
 
@@ -726,6 +741,38 @@ class ProcessFileRenamer extends Process {
 			));
 		} finally {
 			if($page->of() !== $outputFormatting) $page->of($outputFormatting);
+		}
+	}
+
+	/**
+	 * Confirm a rename from a non-cached page loaded directly from the database.
+	 *
+	 * A successful Page::save() return value is not enough for this operation:
+	 * the database basename and source file must agree before completion is logged.
+	 */
+	protected function assertPersistedAsset($pageId, $fieldName, $expectedBasename, $rejectedBasename = '') {
+		$freshPage = $this->wire()->pages->getFresh((int) $pageId);
+		if(!$freshPage || !$freshPage->id) {
+			throw new WireException('The renamed asset owner could not be reloaded for verification.');
+		}
+
+		$freshPage->of(false);
+		$pagefiles = $freshPage->getUnformatted((string) $fieldName);
+		if(!($pagefiles instanceof Pagefiles)) {
+			throw new WireException('The renamed asset field could not be reloaded for verification.');
+		}
+
+		$persistedFile = $this->findPagefileByBasename($pagefiles, (string) $expectedBasename);
+		if(!$persistedFile) {
+			throw new WireException('The owning field did not persist the renamed asset basename.');
+		}
+
+		if($rejectedBasename !== '' && $this->findPagefileByBasename($pagefiles, (string) $rejectedBasename)) {
+			throw new WireException('The owning field still contains the previous asset basename.');
+		}
+
+		if(!is_file($persistedFile->filename)) {
+			throw new WireException('The owning field was saved, but the renamed source file is missing.');
 		}
 	}
 

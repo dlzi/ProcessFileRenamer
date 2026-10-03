@@ -2,6 +2,12 @@
 
 All notable changes to ProcessFileRenamer are documented here.
 
+## 1.3.1
+
+* Reload the owning page without memory caches after saving and verify that the new basename is persisted and its source file exists before logging completion.
+* Roll back the physical rename when the owning-field persistence check fails.
+* Document that synchronized or deployed asset renames require the corresponding database change or a reconciliation migration in every environment.
+
 ## 1.3.0
 
 * Added a live page-ID preview that shows the page title, ID, and whether it has assets available to rename.
